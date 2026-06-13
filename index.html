@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Yol Haritası — Yetişkin DEHB</title>
+<style>
+  :root{
+    --ink:#14171c;
+    --panel:#1b2027;
+    --panel-2:#242a33;
+    --panel-3:#2c333d;
+    --line:#363d48;
+    --text:#ece8e1;
+    --text-dim:#9aa1a8;
+    --text-faint:#6b7178;
+
+    --sage:#7fb39f;
+    --sage-dim:#3d4f4a;
+    --lavender:#a99bd8;
+    --lavender-dim:#403a52;
+    --amber:#d7a465;
+    --amber-dim:#4a3f30;
+    --clay:#c98f7b;
+    --clay-dim:#473632;
+    --peri:#8fa8d9;
+    --peri-dim:#384154;
+
+    --serif: "Iowan Old Style","Palatino Linotype","Georgia","Times New Roman",serif;
+    --sans: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+
+    --radius: 14px;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: radial-gradient(ellipse 120% 80% at 50% -10%, #20262f 0%, var(--ink) 55%);
+    color:var(--text);
+    font-family:var(--sans);
+    min-height:100vh;
+    line-height:1.5;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- layout ---------- */
+  .app{
+    max-width:1180px;
+    margin:0 auto;
+    padding:28px 20px 80px;
+    display:grid;
+    grid-template-columns:240px 1fr;
+    gap:28px;
+  }
+  @media (max-width:840px){
+    .app{ grid-template-columns:1fr; padding:16px 14px 64px; }
+  }
+
+  /* ---------- header ---------- */
+  .header{
+    grid-column:1 / -1;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    margin-bottom:6px;
+  }
+  .header-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:14px;
+  }
+  .title-block h1{
+    font-family:var(--serif);
+    font-weight:600;
+    font-size:32px;
+    margin:0 0 4px;
+    letter-spacing:.3px;
+  }
+  .title-block p{
+    margin:0;
+    color:var(--text-dim);
+    font-size:14.5px;
+    max-width:560px;
+  }
+  .reset-btn{
+    background:transparent;
+    border:1px solid var(--line);
+    color:var(--text-dim);
+    border-radius:999px;
+    padding:7px 16px;
+    font-size:12.5px;
+    cursor:pointer;
+    transition:.2s;
+    white-space:nowrap;
+  }
+  .reset-btn:hover{ border-color:var(--text-dim); color:var(--text); }
+
+  .progress-overview{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:16px 20px;
+  }
+  .progress-ring{
+    position:relative;
+    width:58px; height:58px;
+    flex:none;
+  }
+  .progress-ring svg{ transform:rotate(-90deg); }
+  .progress-ring circle{
+    fill:none;
+    stroke-width:5;
+  }
+  .progress-ring .bg{ stroke: var(--panel-3); }
+  .progress-ring .fg{
+    stroke: var(--sage);
+    stroke-linecap:round;
+    transition:stroke-dashoffset .6s ease;
+  }
+  .progress-ring .pct{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:600; color:var(--text);
+  }
+  .progress-text{ flex:1; min-width:160px; }
+  .progress-text .label{ font-size:13px; color:var(--text-dim); margin-bottom:2px; }
+  .progress-text .sub{ font-size:12px; color:var(--text-faint); }
+  .progress-text .sub.warn{ color:var(--amber); }
+
+  /* ---------- top tabs ---------- */
+  .toptabs{
+    grid-column:1 / -1;
+    display:flex;
+    gap:8px;
+    border-bottom:1px solid var(--line);
+    padding-bottom:0;
+    margin-top:4px;
+  }
+  .toptab{
+    background:none;
+    border:none;
+    color:var(--text-dim);
+    font-family:var(--sans);
+    font-size:14.5px;
+    padding:10px 4px 12px;
+    cursor:pointer;
+    position:relative;
+    border-bottom:2px solid transparent;
+    transition:.2s;
+  }
+  .toptab + .toptab{ margin-left:6px; }
+  .toptab.active{ color:var(--text); border-bottom-color: var(--sage); }
+  .toptab:hover{ color:var(--text); }
+
+  /* ---------- path nav (phase journey) ---------- */
+  .path-nav{
+    display:flex;
+    flex-direction:column;
+    gap:0;
+    position:relative;
+    padding-left:6px;
+  }
+  .path-nav.hidden{ display:none; }
+  .path-node{
+    display:flex;
+    align-items:flex-start;
+    gap:14px;
+    position:relative;
+    padding:14px 8px 26px 0;
+    cursor:pointer;
+    background:none;
+    border:none;
+    text-align:left;
+    font-family:var(--sans);
+    color:var(--text-dim);
+    width:100%;
+  }
+  .path-node:last-child{ padding-bottom:6px; }
+  .path-node .line{
+    position:absolute;
+    left:17px; top:38px; bottom:0;
+    width:2px;
+    background:var(--line);
+  }
+  .path-node:last-child .line{ display:none; }
+  .path-node .dot{
+    flex:none;
+    width:36px; height:36px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:14px; font-weight:700;
+    background:var(--panel-2);
+    border:2px solid var(--line);
+    color:var(--text-faint);
+    transition:.25s;
+    z-index:1;
+  }
+  .path-node .info{ padding-top:4px; }
+  .path-node .info .num{
+    font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--text-faint); margin-bottom:2px;
+  }
+  .path-node .info .name{
+    font-family:var(--serif);
+    font-size:16px;
+    color:var(--text-dim);
+    transition:.25s;
+  }
+  .path-node .info .when{
+    font-size:12px; color:var(--text-faint); margin-top:2px;
+  }
+  .path-node .pct{
+    font-size:11px; color:var(--text-faint); margin-top:6px;
+  }
+
+  .path-node.active .dot{
+    background: var(--phase-color, var(--sage));
+    border-color: var(--phase-color, var(--sage));
+    color:#14171c;
+    box-shadow:0 0 0 5px color-mix(in srgb, var(--phase-color, var(--sage)) 18%, transparent);
+  }
+  .path-node.active .info .name{ color:var(--text); }
+  .path-node.done .dot{
+    background:var(--panel-2);
+    border-color: var(--phase-color, var(--sage));
+    color: var(--phase-color, var(--sage));
+  }
+  .path-node.done .line{ background: var(--phase-color, var(--sage)); opacity:.45; }
+
+  @media (max-width:840px){
+    .path-nav{
+      flex-direction:row;
+      overflow-x:auto;
+      gap:10px;
+      padding:4px 2px 10px;
+      -webkit-overflow-scrolling:touch;
+    }
+    .path-node{ flex-direction:column; align-items:center; padding:6px 10px; width:auto; min-width:90px; }
+    .path-node .line{ display:none; }
+    .path-node .info{ text-align:center; padding-top:6px; }
+    .path-node .info .name{ font-size:13px; }
+    .path-node .info .when{ display:none; }
+  }
+
+  /* ---------- main content ---------- */
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:24px 26px;
+  }
+  @media (max-width:520px){ .panel{ padding:18px 16px; } }
+
+  .phase-head{ margin-bottom:18px; }
+  .phase-head .eyebrow{
+    font-size:11.5px; letter-spacing:2px; text-transform:uppercase;
+    color: var(--phase-color, var(--sage)); margin-bottom:6px; font-weight:600;
+  }
+  .phase-head h2{
+    font-family:var(--serif); font-size:26px; margin:0 0 6px; font-weight:600;
+  }
+  .phase-head .meta{ color:var(--text-dim); font-size:13.5px; margin-bottom:10px; }
+  .phase-head .intro{ color:var(--text-dim); font-size:14.5px; max-width:680px; }
+
+  .focus-card{
+    margin:18px 0 22px;
+    border:1px solid var(--line);
+    border-left:3px solid var(--phase-color, var(--sage));
+    background:var(--panel-2);
+    border-radius:10px;
+    padding:14px 16px;
+  }
+  .focus-card .eyebrow2{
+    font-size:11px; letter-spacing:1.5px; text-transform:uppercase;
+    color:var(--text-faint); margin-bottom:6px;
+  }
+  .focus-card .focus-text{ font-size:14.5px; }
+  .focus-card .focus-text b{ color:var(--text); }
+  .focus-card .all-done{ color:var(--sage); font-size:14.5px; }
+
+  /* step cards */
+  .steps{ display:flex; flex-direction:column; gap:10px; }
+  .step{
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--panel-2);
+    overflow:hidden;
+  }
+  .step.complete{ border-color: color-mix(in srgb, var(--phase-color, var(--sage)) 35%, var(--line)); }
+  .step-head{
+    display:flex; align-items:center; gap:12px;
+    padding:13px 16px;
+    cursor:pointer;
+    user-select:none;
+  }
+  .step-head .badge{
+    flex:none; width:24px; height:24px; border-radius:50%;
+    border:1.5px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    font-size:12px; color:var(--text-faint);
+    transition:.2s;
+  }
+  .step.complete .step-head .badge{
+    background:var(--phase-color, var(--sage));
+    border-color:var(--phase-color, var(--sage));
+    color:#14171c;
+  }
+  .step-head .title{ flex:1; font-size:15px; }
+  .step.complete .step-head .title{ color:var(--text-dim); text-decoration:line-through; text-decoration-color:var(--text-faint); }
+  .step-head .count{ font-size:12px; color:var(--text-faint); flex:none; }
+  .step-head .chev{ flex:none; color:var(--text-faint); transition:transform .2s; font-size:12px; }
+  .step.open .step-head .chev{ transform:rotate(90deg); }
+
+  .micro-list{
+    display:none;
+    flex-direction:column;
+    gap:2px;
+    padding:0 16px 14px 52px;
+  }
+  .step.open .micro-list{ display:flex; }
+  .micro-item{
+    display:flex; align-items:flex-start; gap:10px;
+    padding:7px 0;
+    font-size:14px; color:var(--text-dim);
+    cursor:pointer;
+  }
+  .micro-item input{
+    margin-top:3px; flex:none; width:15px; height:15px; accent-color: var(--phase-color, var(--sage));
+    cursor:pointer;
+  }
+  .micro-item.checked{ color:var(--text-faint); text-decoration:line-through; }
+  .micro-item .txt{ flex:1; }
+
+  /* ---------- habit builder ---------- */
+  .week-rail{
+    display:flex; gap:8px; overflow-x:auto; padding-bottom:14px; margin-bottom:6px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .week-pill{
+    flex:none;
+    border:1px solid var(--line);
+    background:var(--panel-2);
+    color:var(--text-dim);
+    border-radius:999px;
+    padding:8px 16px;
+    font-size:13.5px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:.2s;
+  }
+  .week-pill.active{ background:var(--lavender); color:#14171c; border-color:var(--lavender); }
+  .week-pill .check{ margin-left:6px; opacity:.7; }
+
+  .habit-section{ margin-bottom:6px; }
+  .habit-section h3{
+    font-family:var(--serif); font-size:18px; margin:18px 0 4px; font-weight:600;
+  }
+  .habit-section .when-tag{
+    display:inline-block;
+    font-size:11px; letter-spacing:1px; text-transform:uppercase;
+    color:var(--text-faint); border:1px solid var(--line); border-radius:6px;
+    padding:2px 8px; margin-bottom:10px;
+  }
+  .habit-list{ display:flex; flex-direction:column; gap:6px; margin-bottom:4px; }
+  .habit-item{
+    display:flex; align-items:flex-start; gap:12px;
+    padding:11px 14px;
+    border:1px solid var(--line);
+    border-radius:10px;
+    background:var(--panel-2);
+    font-size:14.5px;
+  }
+  .habit-item.new{ border-left:3px solid var(--amber); }
+  .habit-item input{
+    margin-top:3px; flex:none; width:16px; height:16px; accent-color:var(--lavender); cursor:pointer;
+  }
+  .habit-item.checked{ color:var(--text-faint); }
+  .habit-item.checked .txt{ text-decoration:line-through; }
+  .habit-item label{ flex:1; cursor:pointer; }
+  .habit-why{
+    font-size:12.5px;
+    color:var(--text-faint);
+    margin-top:3px;
+    line-height:1.4;
+  }
+  .habit-item .tag-new{
+    flex:none; font-size:10.5px; letter-spacing:1px; color:var(--amber);
+    border:1px solid var(--amber-dim); background:var(--amber-dim);
+    border-radius:6px; padding:2px 7px; height:fit-content;
+  }
+
+  .reflect-box{
+    margin-top:18px;
+  }
+  .reflect-box textarea{
+    width:100%;
+    min-height:90px;
+    background:var(--panel-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    color:var(--text);
+    font-family:var(--sans);
+    font-size:14px;
+    padding:12px 14px;
+    resize:vertical;
+  }
+  .reflect-box textarea:focus{ outline:1px solid var(--lavender); }
+  .reflect-box .hint{ font-size:12px; color:var(--text-faint); margin-top:6px; }
+
+  .note-line{
+    margin-top:20px;
+    font-size:12.5px;
+    color:var(--text-faint);
+    border-top:1px solid var(--line);
+    padding-top:14px;
+  }
+
+  /* focus visibility */
+  a:focus-visible, button:focus-visible, [tabindex]:focus-visible, input:focus-visible{
+    outline:2px solid var(--lavender);
+    outline-offset:2px;
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{ transition:none !important; animation:none !important; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-top">
+      <div class="title-block">
+        <h1>Yol Haritası</h1>
+        <p>Tarama sonuçlarına dayalı, tamamen bireysel/kendi kendine ilerleme için hazırlanmış eylem planının küçük, uygulanabilir adımlara bölünmüş hâli. Tek seferde her şeyi yapmaya çalışmayın — her hafta sadece bir-iki adım yeterli.</p>
+      </div>
+      <button class="reset-btn" id="resetBtn">İlerlemeyi sıfırla</button>
+    </div>
+    <div class="progress-overview">
+      <div class="progress-ring">
+        <svg width="58" height="58" viewBox="0 0 58 58">
+          <circle class="bg" cx="29" cy="29" r="24"></circle>
+          <circle class="fg" id="ringFg" cx="29" cy="29" r="24" stroke-dasharray="150.8" stroke-dashoffset="150.8"></circle>
+        </svg>
+        <div class="pct" id="ringPct">0%</div>
+      </div>
+      <div class="progress-text">
+        <div class="label" id="progressLabel">Henüz başlamadınız</div>
+        <div class="sub" id="progressSub">İlerleme bu cihazda saklanır.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toptabs">
+    <button class="toptab active" data-view="phases">Faz Haritası</button>
+    <button class="toptab" data-view="habits">Günlük Rutin İnşası</button>
+  </div>
+
+  <nav class="path-nav" id="pathNav"></nav>
+
+  <main class="panel" id="mainPanel"></main>
+
+</div>
+
+<script>
+/* ===================== DATA ===================== */
+const PHASES = [
+  {
+    id:'p0', num:0, color:'var(--sage)', title:'Hazırlık', when:'1. Hafta',
+    intro:'Bu fazın amacı sadece süreci başlatmak. Hiçbir adım uzun sürmüyor — günde 10-15 dakika ayırmak yeterli.',
+    steps:[
+      { id:'p0s1', title:'Tarama sonuçlarını hazır bulundur', micro:[
+        'PDF/Word dosyasını telefonuna kaydet',
+        'Bölüm 2\u2019deki sonuç tablosunun ekran görüntüsünü al',
+        'Kendine ait kısa bir özet not yaz: en yüksek çıkan 3 alan neydi?'
+      ]},
+      { id:'p0s2', title:'Kendi bilgi kaynaklarını derle', micro:[
+        'Yetişkin DEHB hakkında güvenilir 1 kitap, blog veya podcast seç',
+        '"Kendi kendine DEHB yönetimi" / "DEHB self-help" konusunda bir kaynak araştır',
+        'Bulduklarını tek bir listede topla (favoriler, yer imleri vb.)'
+      ]},
+      { id:'p0s3', title:'Kişisel sistem kurulumuna başla', micro:[
+        'Dijital takvim uygulamasını telefonuna kur/aç',
+        'Basit bir görev listesi uygulaması seç',
+        'İlk hatırlatıcını kur (örn. her akşam günlük doldurma saati)'
+      ]},
+      { id:'p0s4', title:'Çocukluk dönemi notlarını topla', micro:[
+        'Anne/babayla kısa bir konuşma için uygun bir zaman belirle (isteğe bağlı)',
+        '5 soruyu hazırla: uyku, dikkat, hareketlilik, organizasyon, arkadaşlık',
+        'Aldığın notları/kendi hatıralarını tek bir sayfada topla'
+      ]},
+      { id:'p0s5', title:'Semptom günlüğüne başla', micro:[
+        'Bir not defteri veya telefon uygulaması seç',
+        'İlk günün notunu yaz (bugün nasıl geçti?)',
+        'Her akşam için kısa bir hatırlatıcı alarmı kur'
+      ]},
+    ]
+  },
+  {
+    id:'p1', num:1, color:'var(--lavender)', title:'Derinlemesine Anlama', when:'2-6. Hafta',
+    intro:'Bu fazda amaç kendini daha iyi tanımak. Ekstra özdeğerlendirmeler, yaşam tarzı gözlemleri ve destek toplulukları bu dönemde devreye giriyor.',
+    steps:[
+      { id:'p1s1', title:'Daha kapsamlı bir özdeğerlendirme yap', micro:[
+        'ASRS (Yetişkin DEHB Kendi Bildirim Ölçeği) gibi ek bir özdeğerlendirme testini çevrimiçi tamamla',
+        'Wender Utah Derecelendirme Ölçeği (çocukluk dönemi için) testini dene',
+        'Sonuçları semptom günlüğündeki notlarınla karşılaştır'
+      ]},
+      { id:'p1s2', title:'Yaşam tarzı faktörlerini gözden geçir', micro:[
+        'Son 2 haftanın uyku düzenini gözden geçir',
+        'Beslenme ve hareket alışkanlıklarını not al',
+        'Bunlardan hangilerinin belirtileri etkileyebileceğini düşün'
+      ]},
+      { id:'p1s3', title:'Destek topluluğu bul', micro:[
+        '"Yetişkin DEHB" ile ilgili çevrimiçi bir topluluk/forum bul',
+        'Bir gönderiyi okuyup kendi durumunla karşılaştır',
+        'İstersen kendi deneyimini paylaş (isteğe bağlı)'
+      ]},
+      { id:'p1s4', title:'1-2 küçük rutini deneme amaçlı uygula', micro:[
+        '"Günlük Rutin İnşası" sekmesine geç',
+        'Hafta 1 alışkanlıklarından birini seç',
+        'Bu hafta sadece bu bir alışkanlığı dene'
+      ]},
+    ]
+  },
+  {
+    id:'p2', num:2, color:'var(--amber)', title:'Kişisel Strateji Planı', when:'1-3. Ay',
+    intro:'Topladığın bilgileri somut bir plana dönüştürme fazı. Hedef, en çok zorlandığın alanlara göre kendi stratejilerini seçmek ve sürdürülebilir bir rutine başlamak.',
+    steps:[
+      { id:'p2s1', title:'Kendi bulgularını gözden geçir', micro:[
+        'Faz 0-1\u2019deki tüm notları yan yana koy',
+        'En çok zorlandığın 3 alanı sırala (örn. zaman yönetimi, organizasyon, duygu düzenleme)',
+        'Bu 3 alanı not defterinde bir başlık olarak yaz'
+      ]},
+      { id:'p2s2', title:'Hangi stratejileri önce deneyeceğine karar ver', micro:[
+        'Her zorlanılan alan için ilgili strateji bölümünü oku',
+        'Her alandan 1 strateji seç (toplam 3)',
+        'Bu 3 stratejiyi takvime/listene ekle'
+      ]},
+      { id:'p2s3', title:'Kendi kendine koçluk rutinine başla', micro:[
+        'Günlük 5 dakikalık bir "check-in" saatini belirle (sabah veya akşam)',
+        'Bu sırada sorulacak 3 sabit soruyu yaz: bugün ne hedefliyorum / ne zorlaştırıyor / ne yardımcı oldu',
+        'İlk haftayı bu rutinle dene'
+      ]},
+      { id:'p2s4', title:'Yapılandırılmış bir self-help programına başla', micro:[
+        'DEHB için bir BDT çalışma kitabı (workbook) veya çevrimiçi ücretsiz kurs bul',
+        'İlk bölümü/dersi tamamla',
+        'Haftalık olarak ne zaman devam edeceğini takvime yaz'
+      ]},
+    ]
+  },
+  {
+    id:'p3', num:3, color:'var(--clay)', title:'Rutin Oturma', when:'3-6. Ay',
+    intro:'Artık sistemler kuruluyor. Bu fazda hız değil, süreklilik önemli — küçük adımları sürdürmek büyük adımlardan daha değerli.',
+    steps:[
+      { id:'p3s1', title:'Stratejilerini gözden geçir ve ayarla', micro:[
+        'Son 4-6 haftada hangi stratejiler işe yaradı?',
+        'İşe yaramayanların neden zor olduğunu not et',
+        'Gerekirse stratejiyi değiştir veya daha basit bir versiyonunu dene'
+      ]},
+      { id:'p3s2', title:'Her 2 haftada bir yeni bir alışkanlık ekle', micro:[
+        '"Günlük Rutin İnşası"nda bir sonraki haftaya geç',
+        'Yeni eklenen alışkanlığı 2 hafta boyunca dene',
+        'Zorlanırsan tekrar denemekte sorun yok'
+      ]},
+      { id:'p3s3', title:'Self-help programına ve hesap verebilirlik sistemine devam et', micro:[
+        'Self-help programının bir sonraki bölümüne geç',
+        'Bir "hesap verebilirlik ortağı" belirle (eş, arkadaş) ve haftalık kısa bir check-in planla',
+        'Bu check-in\u2019de sadece "bu hafta ne denedim, ne oldu" paylaş'
+      ]},
+      { id:'p3s4', title:'Eşinle "yeni normal"i konuşun', micro:[
+        'Haftalık 15 dakikalık kısa bir konuşma zamanı belirleyin',
+        'Hangi sorumluluklar kimde, birlikte gözden geçirin',
+        'İletişim ipuçlarından birini deneyin'
+      ]},
+      { id:'p3s5', title:'3 ayın sonunda küçük bir değerlendirme yap', micro:[
+        'Hangi alışkanlıklar oturdu, hangileri oturmadı?',
+        'PDF\u2019teki izleme şablonunu doldur',
+        'Bir sonraki dönem için 1 öncelik belirle'
+      ]},
+    ]
+  },
+  {
+    id:'p4', num:4, color:'var(--peri)', title:'Sürdürülebilirlik', when:'6-12. Ay',
+    intro:'Sistemler artık günlük yaşamın bir parçası. Bu fazda amaç korumak, gerektiğinde küçük ayarlar yapmak.',
+    steps:[
+      { id:'p4s1', title:'Düzenli kendi kendine kontrol noktaları koy', micro:[
+        'Takvime her 4-6 haftada bir "değerlendirme günü" ekle',
+        'Bu günlerde semptom günlüğünü/haftalık özetleri gözden geçir',
+        'Genel bir not yaz: "şu an nasılım?"'
+      ]},
+      { id:'p4s2', title:'Sistemleri koru, küçük ayarlar yap', micro:[
+        'Hangi alışkanlıklar otomatikleşti, hangileri hâlâ çaba istiyor?',
+        'Zorlanılan 1 alanı seç ve küçük bir ayar dene',
+        '2 hafta sonra tekrar değerlendir'
+      ]},
+      { id:'p4s3', title:'Yıl sonu genel değerlendirme yap', micro:[
+        '1 yıl öncesine göre iş/ilişki/ev/finans alanlarını kısaca karşılaştır',
+        'Gurur duyduğun 3 değişikliği yaz',
+        'Gelecek yıl için 1-2 hedef belirle'
+      ]},
+    ]
+  },
+];
+
+/* Habit builder data — cumulative, each item tagged with the week it's introduced.
+   Bu liste PDF'teki "Günlük Rutin Şablonları" (Bölüm 6) bölümündeki TÜM maddeleri
+   içerir; sadece tek seferde değil, 8 hafta boyunca kademeli olarak tanıtılır. */
+const HABITS = [
+  // Hafta 1 — temel
+  { id:'h1', week:1, when:'Sabah', text:'Alarmı yataktan UZAKTA bir yere koy', why:'"Erteleme" alışkanlığını fiziksel olarak engeller.' },
+  { id:'h2', week:1, when:'Akşam', text:'Ekranları yatmadan 60 dk önce kapatmaya başla (en azından mavi ışık filtresi)', why:'Melatonin üretimini destekler, uyku başlangıcını hızlandırır.' },
+
+  // Hafta 2
+  { id:'h3', week:2, when:'Sabah', text:'Kalkar kalkmaz perdeyi aç / ışığı aç', why:'Sirkadiyen ritmi düzenler, uyanıklığı destekler.' },
+  { id:'h4', week:2, when:'Sabah', text:'Telefonu ilk 15 dakika kontrol ETME', why:'Dikkatin dağılmasını ve sabahın "kaybolmasını" önler.' },
+  { id:'h5', week:2, when:'Akşam', text:'Yarın için kıyafet/çanta/ihtiyaçları hazırla', why:'Sabahki karar yükünü azaltır.' },
+
+  // Hafta 3
+  { id:'h6', week:3, when:'Sabah', text:'Su iç + 5 dakika kısa hareket/esneme', why:'Bedeni ve dikkati aktive eder.' },
+  { id:'h7', week:3, when:'Akşam', text:'Yarının en önemli 3 önceliğini yaz', why:'Gün içi yön kaybını azaltır.' },
+  { id:'h8', week:3, when:'Akşam', text:'Gün kapatma notu: bugün ne iyi gitti, ne zor oldu (1-2 cümle)', why:'Öz-eleştiri döngüsünü yumuşatır, kalıpları fark etmeyi sağlar.' },
+
+  // Hafta 4
+  { id:'h9', week:4, when:'Sabah', text:'Sabit bir kahvaltı rutini oluştur (aynı/benzer seçenekler)', why:'"Ne yiyeceğim" kararını otomatikleştirir.' },
+  { id:'h10', week:4, when:'Sabah', text:'Günün TEK bir önceliğini belirle (en önemli iş)', why:'Sınırsız yapılacaklar listesinin felç edici etkisini azaltır.' },
+  { id:'h11', week:4, when:'Gün içi', text:'Günde en az 1 kez 25 dk çalışma + 5 dk ara (Pomodoro) dene', why:'Uzun, belirsiz süreli görevler "başlanamaz" hale gelir; kısa bloklar başlama eşiğini düşürür.' },
+
+  // Hafta 5
+  { id:'h12', week:5, when:'Sabah', text:'Çıkış öncesi "kapı kontrolü": anahtar, telefon, cüzdan — sabit yerden al', why:'Eşya unutma/kaybetme sorununu sistematik çözer.' },
+  { id:'h13', week:5, when:'Akşam', text:'Sabit bir yatma saati hedefle (±30 dk tolerans, hafta sonu dahil)', why:'Gecikmiş uyku fazını önler.' },
+  { id:'h14', week:5, when:'Gün içi', text:'Görsel bir zaman takibi kullan (kum saati, sayısal geri sayım)', why:'Dijital saatler zaman algısını desteklemez; görünür azalan zaman "zaman körlüğü"nü azaltır.' },
+
+  // Hafta 6
+  { id:'h15', week:6, when:'Gün içi', text:'"2 dakika kuralı": 2 dakikadan kısa işleri hemen yap, listeye ekleme', why:'Küçük işlerin birikmesi hızla yığılmaya dönüşür.' },
+  { id:'h16', week:6, when:'Gün içi', text:'Derin odaklanma gerektiren işler için "odak modu" aç (bildirimleri kapat, sadece acil aramalar açık)', why:'Tamamen sessiz mod yerine ayarlı bildirimler, dikkat dağılmasını azaltırken kaygıyı artırmaz.' },
+  { id:'h17', week:6, when:'Gün içi', text:'Bir işten diğerine geçerken 1-2 dakikalık "kapanış" ritüeli yap', why:'Zihinsel geçişi kolaylaştırır, görev kaybını azaltır.' },
+
+  // Hafta 7
+  { id:'h18', week:7, when:'Haftalık', text:'Pazar akşamı takvimi gözden geçir: randevular, son tarihler, yükümlülükler', why:'Gelecek haftanın yükünü tek bir yerde görmek belirsizliği azaltır.' },
+  { id:'h19', week:7, when:'Haftalık', text:'Haftanın 1-2 ağır görevi için ÖNCEDEN gün/saat belirle', why:'"Bir gün yaparım" yerine somut bir zaman dilimi ayırmak başlama olasılığını artırır.' },
+  { id:'h20', week:7, when:'Haftalık', text:'Market/temel ihtiyaç listesini bu ritüel sırasında oluştur', why:'Son dakika kararları dürtüsel harcamaya yol açabilir.' },
+
+  // Hafta 8
+  { id:'h21', week:8, when:'Haftalık', text:'Eşinle kısa bir "hafta senkronizasyonu" yap: kim hangi gün ne yapacak', why:'Sorumluluk paylaşımındaki belirsizlik, ilişkide tekrarlayan çatışmaların yaygın bir kaynağıdır.' },
+];
+
+const MAX_HABIT_WEEK = Math.max(...HABITS.map(h => h.week));
+const TOTAL_WEEKS = MAX_HABIT_WEEK + 1; // son hafta = sürdür & değerlendir
+
+/* ===================== STATE ===================== */
+let state = {
+  micro: {},      // microstep id -> bool
+  habits: {},     // habit id -> bool
+  reflections: {},// week -> text
+  activeView: 'phases',
+  activePhase: 'p0',
+  activeWeek: 1,
+};
+
+const STORAGE_KEY = 'dehb-roadmap-state-v1';
+
+/* Storage is optional: the app must work fully in-memory if the
+   persistent storage bridge is missing or returns an error. */
+let storagePersistent = true;
+
+function hasStorage(){
+  return typeof window !== 'undefined'
+    && !!window.storage
+    && typeof window.storage.get === 'function'
+    && typeof window.storage.set === 'function';
+}
+
+async function loadState(){
+  if(hasStorage()){
+    try{
+      const res = await window.storage.get(STORAGE_KEY, false);
+      if(res && res.value){
+        const parsed = JSON.parse(res.value);
+        state = Object.assign(state, parsed);
+      }
+    }catch(e){
+      // Normal on first run: the key simply doesn't exist yet.
+      // Don't treat this as "storage unavailable" — only save failures do that.
+    }
+  } else {
+    storagePersistent = false;
+  }
+  render();
+}
+
+let saveTimer = null;
+let saveDisabled = false; // give up calling storage after a failure
+function saveState(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    if(!hasStorage() || saveDisabled){
+      if(storagePersistent){ storagePersistent = false; render(); }
+      return;
+    }
+    try{
+      await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+      if(!storagePersistent){ storagePersistent = true; render(); }
+    }catch(e){
+      // Persistent storage isn't available in this context. Fail silently and
+      // switch to in-memory-only mode for the rest of this session — the app
+      // stays fully usable, it just won't remember progress after a reload.
+      saveDisabled = true;
+      if(storagePersistent){ storagePersistent = false; render(); }
+    }
+  }, 250);
+}
+
+/* ===================== HELPERS ===================== */
+function microId(stepId, idx){ return stepId + '-m' + idx; }
+
+function stepProgress(step){
+  const total = step.micro.length;
+  let done = 0;
+  step.micro.forEach((_, i) => { if(state.micro[microId(step.id, i)]) done++; });
+  return { done, total };
+}
+
+function phaseProgress(phase){
+  let done = 0, total = 0;
+  phase.steps.forEach(s => {
+    const p = stepProgress(s);
+    done += p.done; total += p.total;
+  });
+  return { done, total };
+}
+
+function overallProgress(){
+  let done = 0, total = 0;
+  PHASES.forEach(p => { const pr = phaseProgress(p); done += pr.done; total += pr.total; });
+  HABITS.forEach(h => { total += 1; if(state.habits[h.id]) done++; });
+  return { done, total };
+}
+
+function escapeHtml(str){
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+/* ===================== RENDER: PATH NAV ===================== */
+function renderPathNav(){
+  const nav = document.getElementById('pathNav');
+  if(state.activeView !== 'phases'){ nav.classList.add('hidden'); return; }
+  nav.classList.remove('hidden');
+
+  nav.innerHTML = PHASES.map(p => {
+    const pr = phaseProgress(p);
+    const pct = pr.total ? Math.round(pr.done / pr.total * 100) : 0;
+    const isActive = p.id === state.activePhase;
+    const isDone = pct === 100;
+    let cls = 'path-node';
+    if(isActive) cls += ' active';
+    if(isDone) cls += ' done';
+    return `
+      <button class="${cls}" style="--phase-color:${p.color}" data-phase="${p.id}">
+        <div class="line"></div>
+        <div class="dot">${isDone ? '✓' : p.num}</div>
+        <div class="info">
+          <div class="num">Faz ${p.num}</div>
+          <div class="name">${p.title}</div>
+          <div class="when">${p.when}</div>
+          <div class="pct">${pct}% tamamlandı</div>
+        </div>
+      </button>`;
+  }).join('');
+
+  nav.querySelectorAll('.path-node').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.activePhase = btn.getAttribute('data-phase');
+      render();
+    });
+  });
+}
+
+/* ===================== RENDER: PHASES VIEW ===================== */
+function findNextFocus(phase){
+  for(const step of phase.steps){
+    for(let i=0;i<step.micro.length;i++){
+      if(!state.micro[microId(step.id, i)]){
+        return { step, text: step.micro[i] };
+      }
+    }
+  }
+  return null;
+}
+
+function renderPhaseView(){
+  const phase = PHASES.find(p => p.id === state.activePhase) || PHASES[0];
+  const focus = findNextFocus(phase);
+
+  const stepsHtml = phase.steps.map(step => {
+    const pr = stepProgress(step);
+    const isComplete = pr.done === pr.total;
+    const isOpen = state._openStep === step.id || (!state._openStep && focus && focus.step.id === step.id);
+    const microHtml = step.micro.map((m, i) => {
+      const id = microId(step.id, i);
+      const checked = !!state.micro[id];
+      return `
+        <label class="micro-item ${checked ? 'checked':''}" data-microid="${id}">
+          <input type="checkbox" ${checked ? 'checked':''} data-microid="${id}">
+          <span class="txt">${escapeHtml(m)}</span>
+        </label>`;
+    }).join('');
+
+    return `
+      <div class="step ${isComplete?'complete':''} ${isOpen?'open':''}" style="--phase-color:${phase.color}" data-stepid="${step.id}">
+        <div class="step-head" data-toggle="${step.id}">
+          <div class="badge">${isComplete ? '✓' : ''}</div>
+          <div class="title">${escapeHtml(step.title)}</div>
+          <div class="count">${pr.done}/${pr.total}</div>
+          <div class="chev">▸</div>
+        </div>
+        <div class="micro-list">${microHtml}</div>
+      </div>`;
+  }).join('');
+
+  let focusHtml;
+  if(focus){
+    focusHtml = `
+      <div class="focus-card" style="--phase-color:${phase.color}">
+        <div class="eyebrow2">Şimdi bu adıma odaklan</div>
+        <div class="focus-text"><b>${escapeHtml(focus.step.title)}:</b> ${escapeHtml(focus.text)}</div>
+      </div>`;
+  } else {
+    focusHtml = `
+      <div class="focus-card" style="--phase-color:${phase.color}">
+        <div class="eyebrow2">Bu faz</div>
+        <div class="all-done">✓ Bu fazdaki tüm adımlar tamamlandı. Bir sonraki faza geçebilirsiniz.</div>
+      </div>`;
+  }
+
+  document.getElementById('mainPanel').innerHTML = `
+    <div class="phase-head" style="--phase-color:${phase.color}">
+      <div class="eyebrow">Faz ${phase.num} · ${phase.when}</div>
+      <h2>${phase.title}</h2>
+      <div class="intro">${phase.intro}</div>
+    </div>
+    ${focusHtml}
+    <div class="steps">${stepsHtml}</div>
+    <div class="note-line">İpucu: Her adımın altındaki maddeler "bebek adımları"dır — hepsini bir günde yapmaya çalışmayın. Tek bir maddeyi işaretlemek bile ilerlemedir.</div>
+  `;
+
+  // bind events
+  document.querySelectorAll('[data-toggle]').forEach(el => {
+    el.addEventListener('click', () => {
+      const id = el.getAttribute('data-toggle');
+      state._openStep = (state._openStep === id) ? null : id;
+      render();
+    });
+  });
+  document.querySelectorAll('.micro-item input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const id = e.target.getAttribute('data-microid');
+      state.micro[id] = e.target.checked;
+      saveState();
+      render();
+    });
+  });
+}
+
+/* ===================== RENDER: HABITS VIEW ===================== */
+function renderHabitsView(){
+  const week = state.activeWeek;
+
+  const weekPills = [];
+  for(let w=1; w<=TOTAL_WEEKS; w++){
+    let label = 'Hafta ' + w;
+    if(w === TOTAL_WEEKS) label = 'Hafta ' + MAX_HABIT_WEEK + '+';
+    const weekHabits = HABITS.filter(h => h.week <= Math.min(w, MAX_HABIT_WEEK));
+    const allChecked = weekHabits.length && weekHabits.every(h => state.habits[h.id]);
+    weekPills.push(`
+      <button class="week-pill ${w===week?'active':''}" data-week="${w}">
+        ${label}${allChecked ? '<span class="check">✓</span>' : ''}
+      </button>`);
+  }
+
+  let bodyHtml = '';
+
+  const renderHabitItem = (h, isNew) => {
+    const checked = !!state.habits[h.id];
+    return `
+      <div class="habit-item ${checked?'checked':''} ${isNew?'new':''}">
+        <input type="checkbox" id="hb-${h.id}" ${checked?'checked':''} data-habitid="${h.id}">
+        <label for="hb-${h.id}">
+          <span class="txt">${escapeHtml(h.text)}</span>
+          <div class="habit-why">${escapeHtml(h.why || '')}</div>
+        </label>
+        ${isNew?'<span class="tag-new">YENİ</span>':''}
+      </div>`;
+  };
+
+  if(week < TOTAL_WEEKS){
+    const cumulative = HABITS.filter(h => h.week <= week);
+    const newOnes = HABITS.filter(h => h.week === week);
+
+    const groups = {};
+    cumulative.forEach(h => { (groups[h.when] = groups[h.when] || []).push(h); });
+
+    const order = ['Sabah','Gün içi','Akşam','Haftalık'];
+    bodyHtml += `<div class="phase-head" style="--phase-color:var(--lavender)">
+      <div class="eyebrow">Hafta ${week} / ${MAX_HABIT_WEEK}</div>
+      <h2>${newOnes.length ? 'Bu hafta yeni eklenen' : 'Devam eden alışkanlıklar'}</h2>
+      <div class="intro">${newOnes.length
+        ? 'Önceki haftalardaki alışkanlıkları sürdürürken, bu hafta SADECE aşağıdaki ' + (newOnes.length>1?'maddeleri':'maddeyi') + ' eklemeyi dene. Aceleye gerek yok.'
+        : 'Bu hafta yeni bir şey eklenmiyor — mevcut alışkanlıkları sürdürmeye devam et.'}</div>
+    </div>`;
+
+    order.forEach(when => {
+      const items = groups[when];
+      if(!items || !items.length) return;
+      bodyHtml += `<div class="habit-section"><h3>${when}</h3><div class="habit-list">`;
+      items.forEach(h => { bodyHtml += renderHabitItem(h, h.week === week); });
+      bodyHtml += `</div></div>`;
+    });
+
+  } else {
+    // Son hafta: tüm alışkanlıkların listesi + değerlendirme
+    bodyHtml += `<div class="phase-head" style="--phase-color:var(--peri)">
+      <div class="eyebrow">Hafta ${MAX_HABIT_WEEK} ve sonrası</div>
+      <h2>Sürdür ve değerlendir</h2>
+      <div class="intro">Artık ${MAX_HABIT_WEEK} haftalık temel alışkanlık seti tamamlandı (sabah, gün içi, akşam ve haftalık rutinlerin tümü). Bu noktadan sonra hedef yenisini eklemek değil, mevcutları korumak ve gerektiğinde küçük ayarlar yapmak.</div>
+    </div>`;
+
+    const order = ['Sabah','Gün içi','Akşam','Haftalık'];
+    const groups = {};
+    HABITS.forEach(h => { (groups[h.when] = groups[h.when] || []).push(h); });
+    order.forEach(when => {
+      const items = groups[when];
+      if(!items || !items.length) return;
+      bodyHtml += `<div class="habit-section"><h3>${when}</h3><div class="habit-list">`;
+      items.forEach(h => { bodyHtml += renderHabitItem(h, false); });
+      bodyHtml += `</div></div>`;
+    });
+
+    bodyHtml += `
+      <div class="reflect-box">
+        <h3 style="font-family:var(--serif); font-size:18px; margin:0 0 8px;">Kısa not</h3>
+        <textarea id="reflectInput" placeholder="Hangi alışkanlıklar kolay oturdu? Hangileri zor geliyor? Neyi değiştirmek istersin?">${escapeHtml(state.reflections['final'] || '')}</textarea>
+        <div class="hint">Bu not sadece sizin için — kaydedildiğinde otomatik saklanır.</div>
+      </div>`;
+  }
+
+  document.getElementById('mainPanel').innerHTML = `
+    <div class="week-rail">${weekPills.join('')}</div>
+    ${bodyHtml}
+    <div class="note-line">Hatırlatma: Yeni bir alışkanlığı eklemeden önce öncekinin oturmasını bekleyin. Bir hafta geri adım atmak normaldir — önemli olan tekrar denemek.</div>
+  `;
+
+  document.querySelectorAll('.week-pill').forEach(el => {
+    el.addEventListener('click', () => {
+      state.activeWeek = parseInt(el.getAttribute('data-week'), 10);
+      saveState();
+      render();
+    });
+  });
+  document.querySelectorAll('.habit-item input[type=checkbox]').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const id = e.target.getAttribute('data-habitid');
+      state.habits[id] = e.target.checked;
+      saveState();
+      render();
+    });
+  });
+  const reflectEl = document.getElementById('reflectInput');
+  if(reflectEl){
+    reflectEl.addEventListener('input', (e) => {
+      state.reflections['final'] = e.target.value;
+      saveState();
+    });
+  }
+}
+
+/* ===================== RENDER: OVERVIEW + TABS ===================== */
+function renderOverview(){
+  const { done, total } = overallProgress();
+  const pct = total ? Math.round(done/total*100) : 0;
+  const circumference = 150.8;
+  const offset = circumference - (circumference * pct / 100);
+  document.getElementById('ringFg').style.strokeDashoffset = offset;
+  document.getElementById('ringPct').textContent = pct + '%';
+
+  const label = document.getElementById('progressLabel');
+  const sub = document.getElementById('progressSub');
+  if(pct === 0){
+    label.textContent = 'Henüz başlamadınız';
+  } else if(pct < 100){
+    label.textContent = `Toplam ${done} / ${total} adım tamamlandı`;
+  } else {
+    label.textContent = 'Tüm adımlar tamamlandı 🎉';
+  }
+
+  if(storagePersistent){
+    sub.textContent = pct === 0
+      ? 'Faz 0\u2019dan ilk adımı işaretleyerek başlayabilirsiniz. İlerleme bu cihazda otomatik saklanır.'
+      : (pct === 100 ? 'Yıl sonu değerlendirmesini yapmayı unutmayın.' : 'İlerleme bu cihazda otomatik olarak saklanır.');
+    sub.classList.remove('warn');
+  } else {
+    sub.textContent = 'İlerleme şu an kalıcı olarak kaydedilemiyor — bu sekmeyi açık tuttuğunuz sürece kullanabilirsiniz, ancak sayfa yenilenirse işaretleriniz sıfırlanabilir.';
+    sub.classList.add('warn');
+  }
+}
+
+function renderTabs(){
+  document.querySelectorAll('.toptab').forEach(t => {
+    t.classList.toggle('active', t.getAttribute('data-view') === state.activeView);
+  });
+}
+
+/* ===================== MASTER RENDER ===================== */
+function render(){
+  renderOverview();
+  renderTabs();
+  renderPathNav();
+  if(state.activeView === 'phases') renderPhaseView();
+  else renderHabitsView();
+}
+
+/* ===================== EVENTS ===================== */
+document.querySelectorAll('.toptab').forEach(t => {
+  t.addEventListener('click', () => {
+    state.activeView = t.getAttribute('data-view');
+    saveState();
+    render();
+  });
+});
+
+document.getElementById('resetBtn').addEventListener('click', async () => {
+  if(!confirm('Tüm işaretli ilerleme silinecek. Devam etmek istiyor musunuz?')) return;
+  state = { micro:{}, habits:{}, reflections:{}, activeView:'phases', activePhase:'p0', activeWeek:1 };
+  if(hasStorage() && !saveDisabled){
+    try{ await window.storage.set(STORAGE_KEY, JSON.stringify(state), false); }
+    catch(e){ saveDisabled = true; storagePersistent = false; }
+  }
+  render();
+});
+
+loadState();
+</script>
+</body>
+</html>
